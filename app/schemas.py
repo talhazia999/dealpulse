@@ -40,7 +40,7 @@ class Deal(BaseModel):
     currency: str = "USD"
     stage: str
     stage_entered_date: date
-    close_date: date
+    close_date: date | None = None  # many CRMs leave the expected close date empty
     owner_name: str
     next_step: str | None = None
     decision_maker: str | None = None
@@ -68,7 +68,7 @@ class DealSummary(BaseModel):
 class DealSignals(BaseModel):
     as_of: date
     days_in_stage: int
-    days_to_close: int  # negative when the close date has passed
+    days_to_close: int | None  # negative when the close date has passed; None when no close date is set
     days_since_last_activity: int | None
     days_since_last_inbound: int | None
     unanswered_outbound_days: int | None  # days since our latest email went unanswered

@@ -18,7 +18,8 @@ from pydantic import BaseModel
 
 from app import config
 from app.analyzer import DEAL_FIELDS_EVIDENCE, DealAnalyzer
-from app.crm.hubspot import HubSpotCRM, shared_http
+from app.crm.http import shared_http
+from app.crm.hubspot import HubSpotCRM
 from app.installs import InstallStore
 from app.schemas import Contact, Deal, DealAnalysis, FieldUpdate
 from app.service import get_analyzer, load_deal, run_analysis, save_updates

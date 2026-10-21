@@ -2,13 +2,13 @@
 and writes rep-approved fields back. Uses the HubSpot CRM REST API with an OAuth access token."""
 
 import asyncio
-import html
-import re
-from datetime import date, datetime
+from datetime import date
 
 import httpx
 
 from app.crm.base import CRMAuthError, DealNotFound
+from app.crm.http import shared_http
+from app.crm.text import MAX_ACTIVITIES, clip, strip_html, to_date, to_datetime, to_number
 from app.schemas import Activity, Contact, Deal, DealSummary, FieldUpdate
 
 API_BASE = "https://api.hubapi.com"
@@ -37,21 +37,6 @@ ACTIVITY_PROPERTIES = {
     "meetings": ["hs_timestamp", "hs_meeting_title", "hs_meeting_body", "hs_meeting_start_time", "hs_meeting_end_time"],
 }
 
-# Keep the prompt a sensible size on deals with a long history: the newest activities matter most.
-MAX_ACTIVITIES = 40
-MAX_BODY_CHARS = 3000
-
-_http: httpx.AsyncClient | None = None
-
-
-def shared_http() -> httpx.AsyncClient:
-    """One connection pool for all HubSpot calls, instead of a new client per request."""
-    global _http
-    if _http is None:
-        _http = httpx.AsyncClient(timeout=20)
-    return _http
-
-
 class HubSpotCRM:
     name = "hubspot"
 
@@ -75,7 +60,7 @@ class HubSpotCRM:
                 id=d["id"],
                 name=d["properties"].get("dealname") or "Untitled deal",
                 company=d["properties"].get("dealname") or "",
-                amount=_number(d["properties"].get("amount")),
+                amount=to_number(d["properties"].get("amount")),
                 currency=d["properties"].get("deal_currency_code") or "USD",
                 stage=labels.get(d["properties"].get("dealstage") or "", d["properties"].get("dealstage") or ""),
             )
@@ -113,16 +98,16 @@ class HubSpotCRM:
 
         labels = await self._stage_labels_by_id()
         stage_id = props.get("dealstage") or ""
-        created = _to_date(props.get("createdate")) or date.today()
+        created = to_date(props.get("createdate")) or date.today()
         return Deal(
             id=record["id"],
             name=props.get("dealname") or "Untitled deal",
             company=company or props.get("dealname") or "Unknown company",
-            amount=_number(props.get("amount")),
+            amount=to_number(props.get("amount")),
             currency=props.get("deal_currency_code") or "USD",
             stage=labels.get(stage_id, stage_id or "Unknown"),
             stage_entered_date=_stage_entered(record, stage_id) or created,
-            close_date=_to_date(props.get("closedate")) or created,
+            close_date=to_date(props.get("closedate")),
             owner_name=owner,
             next_step=props.get(FIELD_PROPERTIES["next_step"]) or None,
             decision_maker=props.get(FIELD_PROPERTIES["decision_maker"]) or None,
@@ -238,64 +223,30 @@ class HubSpotCRM:
 
 
 def _to_activity(kind: str, activity_id: str, p: dict) -> Activity | None:
-    when = _to_date(p.get("hs_timestamp") or p.get("hs_meeting_start_time"))
+    when = to_date(p.get("hs_timestamp") or p.get("hs_meeting_start_time"))
     if when is None:
         return None
     if kind == "emails":
-        body = p.get("hs_email_text") or _strip_html(p.get("hs_email_html"))
+        body = p.get("hs_email_text") or strip_html(p.get("hs_email_html"))
         direction = "inbound" if p.get("hs_email_direction") == "INCOMING_EMAIL" else "outbound"
         return Activity(id=activity_id, type="email", date=when, direction=direction,
-                        subject=p.get("hs_email_subject"), body=_clip(body))
+                        subject=p.get("hs_email_subject"), body=clip(body))
     if kind == "notes":
-        return Activity(id=activity_id, type="note", date=when, body=_clip(_strip_html(p.get("hs_note_body"))))
+        return Activity(id=activity_id, type="note", date=when, body=clip(strip_html(p.get("hs_note_body"))))
     if kind == "calls":
-        duration_ms = _number(p.get("hs_call_duration"))
+        duration_ms = to_number(p.get("hs_call_duration"))
         return Activity(id=activity_id, type="call", date=when, subject=p.get("hs_call_title"),
-                        body=_clip(_strip_html(p.get("hs_call_body"))),
+                        body=clip(strip_html(p.get("hs_call_body"))),
                         duration_minutes=round(duration_ms / 60000) if duration_ms else None)
-    start, end = _to_datetime(p.get("hs_meeting_start_time")), _to_datetime(p.get("hs_meeting_end_time"))
+    start, end = to_datetime(p.get("hs_meeting_start_time")), to_datetime(p.get("hs_meeting_end_time"))
     minutes = round((end - start).total_seconds() / 60) if start and end else None
     return Activity(id=activity_id, type="meeting", date=when, subject=p.get("hs_meeting_title"),
-                    body=_clip(_strip_html(p.get("hs_meeting_body"))), duration_minutes=minutes)
+                    body=clip(strip_html(p.get("hs_meeting_body"))), duration_minutes=minutes)
 
 
 def _stage_entered(record: dict, stage_id: str) -> date | None:
     """The date the deal moved into its current stage, from the dealstage property history (newest first)."""
     for entry in record.get("propertiesWithHistory", {}).get("dealstage", []):
         if entry.get("value") == stage_id:
-            return _to_date(entry.get("timestamp"))
+            return to_date(entry.get("timestamp"))
     return None
-
-
-def _to_datetime(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def _to_date(value: str | None) -> date | None:
-    parsed = _to_datetime(value)
-    return parsed.date() if parsed else None
-
-
-def _number(value: str | None) -> float:
-    try:
-        return float(value) if value not in (None, "") else 0.0
-    except ValueError:
-        return 0.0
-
-
-def _strip_html(value: str | None) -> str:
-    if not value:
-        return ""
-    text = re.sub(r"<(br|/p|/div|/li)\s*/?>", "\n", value, flags=re.IGNORECASE)
-    text = re.sub(r"<[^>]+>", "", text)
-    return re.sub(r"\n{3,}", "\n\n", html.unescape(text)).strip()
-
-
-def _clip(text: str) -> str:
-    text = (text or "").strip() or "(no content)"
-    return text if len(text) <= MAX_BODY_CHARS else text[:MAX_BODY_CHARS] + " […]"

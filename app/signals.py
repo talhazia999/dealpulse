@@ -22,7 +22,7 @@ def compute_signals(deal: Deal, today: date | None = None) -> DealSignals:
     return DealSignals(
         as_of=as_of,
         days_in_stage=(as_of - deal.stage_entered_date).days,
-        days_to_close=(deal.close_date - as_of).days,
+        days_to_close=(deal.close_date - as_of).days if deal.close_date else None,
         days_since_last_activity=(as_of - last_activity).days if last_activity else None,
         days_since_last_inbound=(as_of - last_inbound).days if last_inbound else None,
         unanswered_outbound_days=unanswered,

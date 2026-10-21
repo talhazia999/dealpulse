@@ -10,6 +10,7 @@ from app import config
 from app.analyzer import DealAnalyzer
 from app.crm.base import CRMAuthError, CRMConnector
 from app.crm.hubspot import HubSpotCRM
+from app.crm.pipedrive import PipedriveCRM
 from app.crm.sample import DemoSessions
 from app.hubspot_app import router as hubspot_router
 from app.schemas import ApplyUpdatesRequest, Deal, DealAnalysis, DealSignals, DealSummary
@@ -41,9 +42,14 @@ def demo_sessions() -> DemoSessions:
 
 def get_crm(request: Request, response: Response) -> CRMConnector:
     """The CRM behind /api/deals. The public demo gives each visitor their own copy of the sample deals;
-    CRM_PROVIDER=hubspot points it at one HubSpot account instead, for trying DealPulse on real deals."""
+    CRM_PROVIDER=hubspot or pipedrive points it at one real account instead, for trying DealPulse on real deals."""
     if config.CRM_PROVIDER == "hubspot":
         return HubSpotCRM(config.HUBSPOT_ACCESS_TOKEN)
+    if config.CRM_PROVIDER == "pipedrive":
+        domain = config.PIPEDRIVE_COMPANY_DOMAIN
+        if not domain.startswith("http"):
+            domain = f"https://{domain}.pipedrive.com"
+        return PipedriveCRM(config.PIPEDRIVE_API_TOKEN, domain)
     session_id = request.cookies.get(DEMO_COOKIE)
     if not session_id:
         session_id = secrets.token_urlsafe(16)

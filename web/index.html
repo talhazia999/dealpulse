@@ -290,7 +290,7 @@ function renderRecord(updatedFields = []) {
     el("div", { class: "deal-meta" },
       el("span", {}, el("b", {}, money(d.amount, d.currency))),
       el("span", {}, "Stage: ", el("b", {}, d.stage)),
-      el("span", {}, "Close: ", el("b", {}, shortDate(d.close_date))),
+      el("span", {}, "Close: ", el("b", {}, d.close_date ? shortDate(d.close_date) : "Not set")),
       el("span", {}, "Owner: ", el("b", {}, d.owner_name)),
     ),
     el("dl", { class: "fields" },
@@ -332,7 +332,8 @@ function renderRecord(updatedFields = []) {
 function renderSignals(s) {
   const pills = [];
   pills.push(el("span", { class: "pill neutral" }, `${plural(s.days_in_stage, "day")} in stage`));
-  pills.push(s.days_to_close < 0
+  if (s.days_to_close === null) pills.push(el("span", { class: "pill neutral" }, "No close date"));
+  else pills.push(s.days_to_close < 0
     ? el("span", { class: "pill high" }, `Close date passed ${plural(-s.days_to_close, "day")} ago`)
     : el("span", { class: "pill neutral" }, `Closes in ${plural(s.days_to_close, "day")}`));
   if (s.unanswered_outbound_days !== null) {

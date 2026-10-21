@@ -13,7 +13,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import config
-from app.crm import hubspot
+from app.crm import http as crm_http
 from app.crm.hubspot import HubSpotCRM
 from app.hubspot_app import get_install_store, signature_is_valid
 from app.installs import InstallStore
@@ -115,9 +115,9 @@ class FakeHubSpot:
 @pytest.fixture
 def fake():
     fake = FakeHubSpot()
-    hubspot._http = httpx.AsyncClient(transport=httpx.MockTransport(fake))
+    crm_http._http = httpx.AsyncClient(transport=httpx.MockTransport(fake))
     yield fake
-    hubspot._http = None
+    crm_http._http = None
 
 
 def test_reads_a_deal_with_its_activity(fake):

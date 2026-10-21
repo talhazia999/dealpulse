@@ -39,7 +39,7 @@ FastAPI  app/main.py              app/hubspot_app.py  OAuth install · signature
         │                                │
         └──────────── app/service.py ────┘   load deal · analyze · save approved fields
                           │
-        ├── CRM connector  (app/crm/)          sample.py · hubspot.py
+        ├── CRM connector  (app/crm/)          sample.py · hubspot.py · pipedrive.py
         ├── Signals        (app/signals.py)    exact dates and counts
         └── Analyzer       (app/analyzer.py)   Claude, structured output → validated result
 ```
@@ -121,6 +121,21 @@ On install, DealPulse:
 
 To list installs as CSV, run `python -m app.installs`.
 
+## Pipedrive
+
+1. In Pipedrive, open **Personal preferences → API** and copy your personal API token.
+2. In `.env`, set:
+   - `CRM_PROVIDER=pipedrive`
+   - `PIPEDRIVE_API_TOKEN=<token>`
+   - `PIPEDRIVE_COMPANY_DOMAIN=<your company>`, the part before `.pipedrive.com`
+3. Run the server and call `POST /api/deals/<Pipedrive deal ID>/analyze`.
+
+How Pipedrive data maps to DealPulse:
+- **Calls and meetings** are read from activities. Other activity types, such as tasks, are read as notes.
+- **Notes and emails** are read too. Emails need the user's mailbox connected to Pipedrive. Without it, the deal is analyzed without emails.
+- **Custom fields:** Pipedrive has no next step, decision maker or pain points fields. The first time a rep approves an update, DealPulse creates three long-text deal fields ("Next step (DealPulse)" and so on).
+- **Decision-maker:** Pipedrive has no buying-role field, so a person counts as the decision-maker when the deal's "Decision maker (DealPulse)" field names them.
+
 ## Deploy
 
 Any host that runs Python works (Render, Railway, Fly.io).
@@ -147,8 +162,10 @@ On Windows PowerShell: `$env:RUN_EVALS=1; pytest -m eval -v`
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | |
 | `ANTHROPIC_EFFORT` | `medium` | `low` is faster and cheaper; `high` is more thorough |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated origins allowed to call the API from another site |
-| `CRM_PROVIDER` | `sample` | `hubspot` points `/api/deals` at one HubSpot account |
+| `CRM_PROVIDER` | `sample` | `hubspot` or `pipedrive` points `/api/deals` at one real account |
 | `HUBSPOT_ACCESS_TOKEN` | — | Private app token, used when `CRM_PROVIDER=hubspot` |
+| `PIPEDRIVE_API_TOKEN` | — | Personal API token, used when `CRM_PROVIDER=pipedrive` |
+| `PIPEDRIVE_COMPANY_DOMAIN` | — | e.g. `acme` for `acme.pipedrive.com` |
 | `HUBSPOT_CLIENT_ID` / `HUBSPOT_CLIENT_SECRET` | — | From the public app's Auth tab |
 | `HUBSPOT_REDIRECT_URI` | — | `https://<your API>/hubspot/oauth/callback` |
 | `PUBLIC_BASE_URL` | — | The API's public URL. Needed behind a proxy to verify HubSpot signatures |
@@ -162,4 +179,5 @@ On Windows PowerShell: `$env:RUN_EVALS=1; pytest -m eval -v`
 - [x] HubSpot deal card (code written; needs uploading with the HubSpot CLI)
 - [ ] Run the AI evals with a real API key and tune the prompt
 - [ ] Deploy
-- [ ] Pipedrive connector
+- [x] Pipedrive connector (personal API token)
+- [ ] Pipedrive Marketplace app: OAuth install and a deal-sidebar panel

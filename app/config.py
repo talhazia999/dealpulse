@@ -16,10 +16,13 @@ CORS_ORIGINS = [
     if origin.strip()
 ]
 
-# Which CRM the /api/deals endpoints read: "sample" (the public demo) or "hubspot" (one account,
-# using HUBSPOT_ACCESS_TOKEN from a HubSpot private app or service key).
+# Which CRM the /api/deals endpoints read: "sample" (the public demo), or one real account:
+# "hubspot" (HUBSPOT_ACCESS_TOKEN from a private app) or "pipedrive" (personal API token + company domain).
 CRM_PROVIDER = os.getenv("CRM_PROVIDER", "sample")
 HUBSPOT_ACCESS_TOKEN = os.getenv("HUBSPOT_ACCESS_TOKEN", "")
+PIPEDRIVE_API_TOKEN = os.getenv("PIPEDRIVE_API_TOKEN", "")
+# Your Pipedrive address, e.g. "acme" or "https://acme.pipedrive.com".
+PIPEDRIVE_COMPANY_DOMAIN = os.getenv("PIPEDRIVE_COMPANY_DOMAIN", "")
 
 # The public HubSpot app (OAuth install + deal card).
 HUBSPOT_CLIENT_ID = os.getenv("HUBSPOT_CLIENT_ID", "")
