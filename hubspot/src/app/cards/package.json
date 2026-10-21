@@ -1,0 +1,9 @@
+{
+  "name": "dealpulse-card",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@hubspot/ui-extensions": "latest",
+    "react": "^18.3.1"
+  }
+}

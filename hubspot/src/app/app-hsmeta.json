@@ -1,0 +1,36 @@
+{
+  "uid": "dealpulse",
+  "type": "app",
+  "config": {
+    "name": "DealPulse",
+    "description": "One click on any deal: a summary, risk flags linked to the emails and calls they came from, the next step, a follow-up email draft and CRM updates the rep approves.",
+    "distribution": "marketplace",
+    "isUserLevel": false,
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": ["https://api.dealpulse.example/hubspot/oauth/callback"],
+      "requiredScopes": [
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.contacts.read",
+        "crm.objects.companies.read",
+        "crm.objects.owners.read",
+        "crm.schemas.deals.read",
+        "crm.schemas.deals.write",
+        "sales-email-read"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.dealpulse.example"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@dealpulse.example",
+      "documentationUrl": "https://api.dealpulse.example",
+      "supportUrl": "https://api.dealpulse.example"
+    }
+  }
+}

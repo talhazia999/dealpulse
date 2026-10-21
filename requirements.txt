@@ -2,4 +2,5 @@ anthropic>=1.15,<2
 fastapi>=0.148
 uvicorn[standard]>=0.54
 pydantic>=2.14
+httpx>=0.28
 python-dotenv>=1.2

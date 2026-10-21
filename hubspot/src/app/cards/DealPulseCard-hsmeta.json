@@ -1,0 +1,11 @@
+{
+  "uid": "dealpulse-deal-card",
+  "type": "card",
+  "config": {
+    "name": "DealPulse",
+    "description": "AI deal assistant",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/DealPulseCard.jsx",
+    "objectTypes": ["DEALS"]
+  }
+}

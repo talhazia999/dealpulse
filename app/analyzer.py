@@ -4,10 +4,11 @@ import anthropic
 
 from app import config
 from app.prompts import SYSTEM_PROMPT, build_user_prompt
-from app.schemas import AnalysisResult, Deal, DealAnalysis
+from app.schemas import AnalysisResult, Deal, DealAnalysis, DealSignals
 from app.signals import compute_signals
 
 DEAL_FIELDS_EVIDENCE = "deal_fields"
+CACHE_SIZE = 256
 
 
 class AnalysisError(Exception):
@@ -24,9 +25,22 @@ class DealAnalyzer:
         self.client = client or anthropic.AsyncAnthropic()
         self.model = model
         self.effort = effort
+        # An unchanged deal gets the same analysis, so repeat clicks (and the public demo) cost nothing.
+        self._cache: dict[str, DealAnalysis] = {}
 
     async def analyze(self, deal: Deal) -> DealAnalysis:
         signals = compute_signals(deal)
+        key = f"{self.model}|{self.effort}|{signals.as_of}|{deal.model_dump_json()}"
+        if key in self._cache:
+            return self._cache[key]
+
+        analysis = await self._call_model(deal, signals)
+        if len(self._cache) >= CACHE_SIZE:
+            self._cache.pop(next(iter(self._cache)))
+        self._cache[key] = analysis
+        return analysis
+
+    async def _call_model(self, deal: Deal, signals: DealSignals) -> DealAnalysis:
         response = await self.client.beta.messages.parse(
             model=self.model,
             max_tokens=16000,

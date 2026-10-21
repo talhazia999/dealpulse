@@ -10,6 +10,10 @@ class DealNotFound(Exception):
     pass
 
 
+class CRMAuthError(Exception):
+    """The CRM rejected our credentials: the token expired, was revoked or lacks a scope."""
+
+
 class CRMConnector(Protocol):
     name: str
 

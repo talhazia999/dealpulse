@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DealPulse</title>
+<meta name="description" content="An AI deal assistant for B2B CRMs. One click reads a deal's emails, notes and calls and returns risks, the next step and a follow-up email.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M5 17h6l3-7 4 13 3-6h6' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #f1f3f6;
+    --border: #e3e6eb;
+    --text: #14171c;
+    --muted: #5d6573;
+    --faint: #8b93a1;
+    --accent: #4f46e5;
+    --accent-ink: #ffffff;
+    --accent-soft: #eef0ff;
+    --high: #d92d20;
+    --high-soft: #fdecea;
+    --medium: #b54708;
+    --medium-soft: #fef3e2;
+    --low: #475467;
+    --low-soft: #eef0f3;
+    --ok: #067647;
+    --ok-soft: #e6f6ee;
+    --flash: #fff4c2;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 4px 16px rgba(16, 24, 40, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1014;
+      --surface: #161a20;
+      --surface-2: #1d222a;
+      --border: #2a303a;
+      --text: #e8ebf0;
+      --muted: #a2aab8;
+      --faint: #737c8c;
+      --accent: #8b85ff;
+      --accent-ink: #0e1014;
+      --accent-soft: #232347;
+      --high: #ff7a6e;
+      --high-soft: #3a1d1b;
+      --medium: #f5b25c;
+      --medium-soft: #36281a;
+      --low: #b3bcc9;
+      --low-soft: #242a33;
+      --ok: #5fd39a;
+      --ok-soft: #173326;
+      --flash: #3d3712;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+
+  /* Header */
+  header { padding: 28px 0 8px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 18px; letter-spacing: -.01em; }
+  .brand svg { width: 28px; height: 28px; }
+  .brand a { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--muted); text-decoration: none; }
+  .brand a:hover { color: var(--text); }
+  h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; letter-spacing: -.025em; margin: 28px 0 10px; max-width: 760px; }
+  .lede { color: var(--muted); font-size: 16px; margin: 0 0 24px; max-width: 680px; }
+
+  /* Deal picker */
+  .picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .pick {
+    flex: 0 0 auto; text-align: left; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; min-width: 200px;
+  }
+  .pick:hover { border-color: var(--faint); }
+  .pick[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .pick b { display: block; font-size: 14px; font-weight: 600; }
+  .pick span { font-size: 13px; color: var(--muted); }
+
+  /* Layout */
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+  .panel-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint);
+  }
+  .panel-body { padding: 18px; }
+  .ai-panel { position: sticky; top: 16px; }
+  @media (max-width: 860px) { .ai-panel { position: static; order: -1; } }
+
+  /* CRM record */
+  .deal-name { font-size: 18px; font-weight: 650; letter-spacing: -.01em; margin: 0 0 4px; }
+  .deal-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .deal-meta b { color: var(--text); font-weight: 600; }
+  .fields { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
+  .field { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; background: var(--surface); padding: 9px 12px; font-size: 14px; transition: background .6s; }
+  .field dt { color: var(--muted); }
+  .field dd { margin: 0; }
+  .field .empty { color: var(--faint); }
+  .field.updated { background: var(--ok-soft); }
+  h3 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 0 0 8px; }
+  .contacts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .contact { font-size: 13px; background: var(--surface-2); border-radius: 8px; padding: 6px 10px; }
+  .contact span { color: var(--muted); }
+  .timeline { display: grid; gap: 10px; }
+  .act { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; transition: background .4s, border-color .4s; scroll-margin: 80px; }
+  .act.flash { background: var(--flash); border-color: var(--medium); }
+  .act-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .act-type { font-weight: 600; color: var(--text); text-transform: capitalize; }
+  .act-subject { font-weight: 600; font-size: 14px; }
+  .act p { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  .act-id { margin-left: auto; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; color: var(--faint); }
+
+  /* Pills */
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+  .pill.high { color: var(--high); background: var(--high-soft); }
+  .pill.medium { color: var(--medium); background: var(--medium-soft); }
+  .pill.low { color: var(--low); background: var(--low-soft); }
+  .pill.ok { color: var(--ok); background: var(--ok-soft); }
+  .pill.neutral { color: var(--muted); background: var(--surface-2); font-weight: 500; }
+
+  /* AI panel */
+  .signals { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .note { font-size: 12px; color: var(--faint); margin: 0 0 16px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 0; border-radius: 10px; padding: 11px 18px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:disabled { opacity: .55; cursor: default; filter: none; }
+  .btn.wide { width: 100%; }
+  .btn.ghost { background: var(--surface-2); color: var(--text); font-weight: 500; padding: 7px 12px; font-size: 13px; }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .section { padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--border); }
+  .summary { font-size: 15px; margin: 0; }
+  .risk { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px 0; }
+  .risk + .risk { border-top: 1px dashed var(--border); }
+  .risk-title { font-size: 14px; font-weight: 550; }
+  .evidence { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+  .ev { font-size: 12px; border: 1px solid var(--border); background: var(--surface); border-radius: 6px; padding: 1px 7px; cursor: pointer; color: var(--muted); }
+  .ev:hover { color: var(--text); border-color: var(--faint); }
+  .ev[disabled] { cursor: default; }
+  .next { background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; font-weight: 550; }
+  .email { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .email-head { display: grid; gap: 2px; padding: 10px 12px; background: var(--surface-2); font-size: 13px; }
+  .email-head span { color: var(--muted); }
+  .email-body { padding: 12px; font-size: 14px; white-space: pre-wrap; }
+  .email-actions { display: flex; justify-content: flex-end; padding: 0 12px 12px; }
+  .update { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px 0; cursor: pointer; }
+  .update + .update { border-top: 1px dashed var(--border); }
+  .update input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
+  .update-field { font-size: 12px; color: var(--muted); }
+  .update-value { font-size: 14px; font-weight: 550; }
+  .update-reason { font-size: 13px; color: var(--muted); }
+  .alert { border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-top: 14px; }
+  .alert.error { background: var(--high-soft); color: var(--high); }
+  .alert.success { background: var(--ok-soft); color: var(--ok); }
+  .meta { font-size: 12px; color: var(--faint); margin-top: 14px; }
+  .placeholder { color: var(--muted); font-size: 14px; margin: 14px 0 0; }
+
+  /* How it works */
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 40px 0 24px; }
+  @media (max-width: 760px) { .how { grid-template-columns: minmax(0, 1fr); } }
+  .how div { border-top: 2px solid var(--border); padding-top: 12px; }
+  .how b { display: block; margin-bottom: 4px; }
+  .how p { margin: 0; color: var(--muted); font-size: 14px; }
+  footer { padding: 16px 0 40px; font-size: 13px; color: var(--faint); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M5 17h6l3-7 4 13 3-6h6" fill="none" stroke="var(--accent-ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      DealPulse
+      <a href="/docs">API docs</a>
+    </div>
+    <h1>Know what every deal needs, in one click.</h1>
+    <p class="lede">DealPulse reads a deal's emails, notes and calls, then flags the risks, suggests the next step and drafts the follow-up. Every risk links to the activity it came from. Nothing changes in the CRM until the rep approves it.</p>
+  </header>
+
+  <nav class="picker" id="picker" aria-label="Sample deals"></nav>
+
+  <main class="grid">
+    <section class="panel" aria-labelledby="crm-title">
+      <div class="panel-head" id="crm-title">CRM deal record</div>
+      <div class="panel-body" id="record"></div>
+    </section>
+
+    <section class="panel ai-panel" aria-labelledby="ai-title">
+      <div class="panel-head" id="ai-title">DealPulse</div>
+      <div class="panel-body">
+        <h3>Signals</h3>
+        <div class="signals" id="signals"></div>
+        <p class="note">Computed in code from the deal's dates, not estimated by the AI.</p>
+        <button class="btn wide" id="analyze">Analyze deal</button>
+        <div id="error" class="alert error hidden" role="alert"></div>
+        <p class="placeholder" id="placeholder">Click Analyze to read this deal's activity.</p>
+        <div id="result" class="hidden" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <section class="how" aria-label="How it works">
+    <div><b>1. Exact facts first</b><p>Days in stage, days since the last reply and the close date are calculated in code, so the numbers are always right.</p></div>
+    <div><b>2. One AI call, checked</b><p>Claude returns a structured analysis. Evidence that doesn't exist in the deal is removed before you see it.</p></div>
+    <div><b>3. Rep stays in control</b><p>Suggested field updates are written to the CRM only after the rep ticks and approves them.</p></div>
+  </section>
+
+  <footer>DealPulse · Python, FastAPI and Claude · Sample deals use made-up companies.</footer>
+</div>
+
+<script>
+const state = { deals: [], deal: null, analysis: null };
+const $ = (id) => document.getElementById(id);
+
+// Small DOM helper. Text is always set with textContent, so deal content is never parsed as HTML.
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value === undefined || value === null || value === false) continue;
+    if (key === "class") node.className = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value === true ? "" : value);
+  }
+  for (const child of children.flat()) {
+    if (child === null || child === undefined || child === false) continue;
+    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  }
+  return node;
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = typeof body.detail === "string" ? body.detail : `Request failed (${response.status}).`;
+    throw new Error(detail);
+  }
+  return body;
+}
+
+const money = (amount, currency) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "USD", maximumFractionDigits: 0 }).format(amount);
+const shortDate = (iso) =>
+  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const activityCount = (n) => `${n} ${n === 1 ? "activity" : "activities"}`;
+const FIELD_LABELS = { next_step: "Next step", decision_maker: "Decision maker", pain_points: "Pain points" };
+
+// ---------------------------------------------------------------------------
+// Deal picker and CRM record
+// ---------------------------------------------------------------------------
+
+function renderPicker() {
+  $("picker").replaceChildren(
+    ...state.deals.map((d) =>
+      el("button", {
+        class: "pick",
+        "aria-pressed": String(state.deal?.id === d.id),
+        onclick: () => selectDeal(d.id),
+      }, el("b", {}, d.company), el("span", {}, `${money(d.amount, d.currency)} · ${d.stage}`))
+    )
+  );
+}
+
+function renderRecord(updatedFields = []) {
+  const d = state.deal;
+  const contactsById = Object.fromEntries(d.contacts.map((c) => [c.id, c]));
+  const activities = [...d.activities].sort((a, b) => b.date.localeCompare(a.date));
+
+  $("record").replaceChildren(
+    el("p", { class: "deal-name" }, d.name),
+    el("div", { class: "deal-meta" },
+      el("span", {}, el("b", {}, money(d.amount, d.currency))),
+      el("span", {}, "Stage: ", el("b", {}, d.stage)),
+      el("span", {}, "Close: ", el("b", {}, shortDate(d.close_date))),
+      el("span", {}, "Owner: ", el("b", {}, d.owner_name)),
+    ),
+    el("dl", { class: "fields" },
+      ...Object.entries(FIELD_LABELS).map(([key, label]) =>
+        el("div", { class: "field" + (updatedFields.includes(key) ? " updated" : ""), id: `field-${key}` },
+          el("dt", {}, label),
+          el("dd", { class: d[key] ? "" : "empty" }, d[key] || "Not set"),
+        )
+      ),
+    ),
+    el("h3", {}, "Contacts"),
+    el("div", { class: "contacts" },
+      ...d.contacts.map((c) =>
+        el("div", { class: "contact" }, c.name, c.title ? el("span", {}, ` · ${c.title}`) : null)
+      ),
+    ),
+    el("h3", {}, `Activity (${d.activities.length})`),
+    el("div", { class: "timeline" },
+      ...activities.map((a) => {
+        const people = a.contact_ids.map((id) => contactsById[id]?.name).filter(Boolean).join(", ");
+        const direction = a.direction === "inbound" ? "from prospect" : a.direction === "outbound" ? "sent by us" : null;
+        return el("article", { class: "act", id: `act-${a.id}` },
+          el("div", { class: "act-top" },
+            el("span", { class: "act-type" }, a.type),
+            el("span", {}, shortDate(a.date)),
+            direction ? el("span", { class: "pill neutral" }, direction) : null,
+            a.duration_minutes ? el("span", {}, `${a.duration_minutes} min`) : null,
+            people ? el("span", {}, people) : null,
+            el("span", { class: "act-id" }, a.id),
+          ),
+          a.subject ? el("div", { class: "act-subject" }, a.subject) : null,
+          el("p", {}, a.body),
+        );
+      }),
+    ),
+  );
+}
+
+function renderSignals(s) {
+  const pills = [];
+  pills.push(el("span", { class: "pill neutral" }, `${plural(s.days_in_stage, "day")} in stage`));
+  pills.push(s.days_to_close < 0
+    ? el("span", { class: "pill high" }, `Close date passed ${plural(-s.days_to_close, "day")} ago`)
+    : el("span", { class: "pill neutral" }, `Closes in ${plural(s.days_to_close, "day")}`));
+  if (s.unanswered_outbound_days !== null) {
+    const cls = s.unanswered_outbound_days >= 7 ? "medium" : "neutral";
+    pills.push(el("span", { class: `pill ${cls}` }, `No reply for ${plural(s.unanswered_outbound_days, "day")}`));
+  } else if (s.days_since_last_inbound !== null) {
+    pills.push(el("span", { class: "pill ok" }, `Last reply ${plural(s.days_since_last_inbound, "day")} ago`));
+  }
+  pills.push(s.has_decision_maker_contact
+    ? el("span", { class: "pill ok" }, "Decision-maker on deal")
+    : el("span", { class: "pill medium" }, "No decision-maker contact"));
+  $("signals").replaceChildren(...pills);
+}
+
+async function selectDeal(id) {
+  state.analysis = null;
+  $("result").classList.add("hidden");
+  $("error").classList.add("hidden");
+  $("placeholder").classList.remove("hidden");
+  setAnalyzing(false);
+
+  const [deal, signals] = await Promise.all([api(`/api/deals/${id}`), api(`/api/deals/${id}/signals`)]);
+  state.deal = deal;
+  renderPicker();
+  renderRecord();
+  renderSignals(signals);
+  history.replaceState(null, "", `#${id}`);
+}
+
+// ---------------------------------------------------------------------------
+// Analysis
+// ---------------------------------------------------------------------------
+
+function setAnalyzing(busy) {
+  const button = $("analyze");
+  button.disabled = busy;
+  button.replaceChildren(
+    ...(busy
+      ? [el("span", { class: "spinner", "aria-hidden": "true" }), `Reading ${activityCount(state.deal?.activities.length || 0)}…`]
+      : [state.analysis ? "Analyze again" : "Analyze deal"])
+  );
+}
+
+async function analyze() {
+  const id = state.deal.id;
+  $("error").classList.add("hidden");
+  setAnalyzing(true);
+  try {
+    const analysis = await api(`/api/deals/${id}/analyze`, { method: "POST" });
+    if (state.deal.id !== id) return; // the user switched deals while waiting
+    state.analysis = analysis;
+    renderSignals(analysis.signals);
+    renderResult();
+  } catch (err) {
+    $("error").textContent = err.message;
+    $("error").classList.remove("hidden");
+  } finally {
+    setAnalyzing(false);
+  }
+}
+
+function flashActivity(id) {
+  const node = $(`act-${id}`);
+  if (!node) return;
+  node.scrollIntoView({ behavior: "smooth", block: "center" });
+  node.classList.add("flash");
+  setTimeout(() => node.classList.remove("flash"), 1600);
+}
+
+function evidenceChip(id) {
+  if (id === "deal_fields") return el("button", { class: "ev", disabled: true }, "Deal fields");
+  const activity = state.deal.activities.find((a) => a.id === id);
+  if (!activity) return null;
+  const label = `${activity.type[0].toUpperCase()}${activity.type.slice(1)} · ${shortDate(activity.date)}`;
+  return el("button", { class: "ev", title: "Show in the deal record", onclick: () => flashActivity(id) }, label);
+}
+
+function renderResult() {
+  const { result, model } = state.analysis;
+  const contact = state.deal.contacts.find((c) => c.id === result.follow_up_email.to_contact_id);
+  const order = { high: 0, medium: 1, low: 2 };
+  const risks = [...result.risks].sort((a, b) => order[a.severity] - order[b.severity]);
+
+  const emailText = `Subject: ${result.follow_up_email.subject}\n\n${result.follow_up_email.body}`;
+  const copyButton = el("button", { class: "btn ghost" }, "Copy email");
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(emailText);
+      copyButton.textContent = "Copied";
+    } catch {
+      copyButton.textContent = "Copy failed";
+    }
+    setTimeout(() => (copyButton.textContent = "Copy email"), 1500);
+  });
+
+  const updates = el("div", {},
+    ...result.field_updates.map((u, i) =>
+      el("label", { class: "update" },
+        el("input", { type: "checkbox", checked: true, "data-index": i }),
+        el("div", {},
+          el("div", { class: "update-field" }, FIELD_LABELS[u.field] || u.field),
+          el("div", { class: "update-value" }, u.value),
+          el("div", { class: "update-reason" }, u.reason),
+        ),
+      )
+    )
+  );
+  const status = el("div", { class: "alert hidden", role: "status" });
+  const approve = el("button", { class: "btn wide", onclick: () => applyUpdates(updates, approve, status) }, "Approve and update CRM");
+
+  $("placeholder").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  $("result").replaceChildren(
+    el("div", { class: "section" },
+      el("h3", {}, "Summary"),
+      el("p", { class: "summary" }, result.summary),
+    ),
+    el("div", { class: "section" },
+      el("h3", {}, `Risks (${risks.length})`),
+      risks.length
+        ? risks.map((r) =>
+            el("div", { class: "risk" },
+              el("span", { class: `pill ${r.severity}` }, r.severity),
+              el("div", { class: "risk-title" }, r.title),
+              el("div", { class: "evidence" }, ...r.evidence.map(evidenceChip)),
+            ))
+        : el("p", { class: "summary" }, "No risks found. This deal looks healthy."),
+    ),
+    el("div", { class: "section" },
+      el("h3", {}, "Next step"),
+      el("div", { class: "next" }, result.next_step),
+    ),
+    el("div", { class: "section" },
+      el("h3", {}, "Follow-up email"),
+      el("div", { class: "email" },
+        el("div", { class: "email-head" },
+          el("div", {}, el("span", {}, "To: "), contact ? `${contact.name}${contact.email ? ` <${contact.email}>` : ""}` : "—"),
+          el("div", {}, el("span", {}, "Subject: "), result.follow_up_email.subject),
+        ),
+        el("div", { class: "email-body" }, result.follow_up_email.body),
+        el("div", { class: "email-actions" }, copyButton),
+      ),
+    ),
+    result.field_updates.length
+      ? el("div", { class: "section" },
+          el("h3", {}, "Suggested CRM updates"),
+          updates,
+          approve,
+          status,
+        )
+      : null,
+    el("p", { class: "meta" }, `Model: ${model}`),
+  );
+}
+
+async function applyUpdates(container, button, status) {
+  const chosen = [...container.querySelectorAll("input:checked")]
+    .map((input) => state.analysis.result.field_updates[Number(input.dataset.index)]);
+  status.className = "alert hidden";
+  if (!chosen.length) {
+    status.className = "alert error";
+    status.textContent = "Tick at least one update to apply.";
+    return;
+  }
+  button.disabled = true;
+  try {
+    state.deal = await api(`/api/deals/${state.deal.id}/apply-updates`, {
+      method: "POST",
+      body: JSON.stringify({ updates: chosen }),
+    });
+    renderRecord(chosen.map((u) => u.field));
+    container.querySelectorAll("input").forEach((input) => (input.disabled = true));
+    button.textContent = "Updated";
+    status.className = "alert success";
+    status.textContent = `${plural(chosen.length, "field")} written to the CRM record.`;
+  } catch (err) {
+    button.disabled = false;
+    status.className = "alert error";
+    status.textContent = err.message;
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+$("analyze").addEventListener("click", analyze);
+
+(async function init() {
+  try {
+    state.deals = await api("/api/deals");
+    const fromHash = location.hash.slice(1);
+    const first = state.deals.find((d) => d.id === fromHash) || state.deals[0];
+    if (first) await selectDeal(first.id);
+  } catch (err) {
+    $("error").textContent = `Could not load deals: ${err.message}`;
+    $("error").classList.remove("hidden");
+  }
+})();
+</script>
+</body>
+</html>

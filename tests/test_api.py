@@ -1,11 +1,12 @@
 """API tests. The AI call is replaced with a fake, so these run offline and cost nothing."""
 
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.analyzer import clean_result
+from app.analyzer import DealAnalyzer, clean_result
 from app.crm.sample import SampleCRM
 from app.main import app, get_analyzer, get_crm
 from app.schemas import AnalysisResult, Deal, DealAnalysis, FieldUpdate, FollowUpEmail, Risk
@@ -60,6 +61,50 @@ def test_apply_updates_writes_back(client):
 def test_apply_updates_rejects_unknown_fields(client):
     payload = {"updates": [{"field": "amount", "value": "1", "reason": "x"}]}
     assert client.post("/api/deals/northwind/apply-updates", json=payload).status_code == 422
+
+
+def test_demo_visitors_do_not_see_each_others_updates():
+    alice, bob = TestClient(app), TestClient(app)
+    alice.get("/api/deals")
+    bob.get("/api/deals")
+    payload = {"updates": [{"field": "next_step", "value": "Alice's step", "reason": "r"}]}
+    alice.post("/api/deals/northwind/apply-updates", json=payload)
+
+    assert alice.get("/api/deals/northwind").json()["next_step"] == "Alice's step"
+    assert bob.get("/api/deals/northwind").json()["next_step"] is None
+
+
+def test_signals_endpoint_needs_no_ai(client):
+    signals = client.get("/api/deals/kestrel/signals").json()
+    assert signals["days_to_close"] == -19
+    assert client.get("/api/deals/nope/signals").status_code == 404
+
+
+def test_demo_page_is_served(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "DealPulse" in response.text
+
+
+def test_analyzer_caches_unchanged_deals():
+    calls = []
+
+    async def parse(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(stop_reason="end_turn", parsed_output=FAKE_RESULT, model="test-model")
+
+    fake_client = SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(parse=parse)))
+    analyzer = DealAnalyzer(client=fake_client)
+    crm = SampleCRM()
+    deal = asyncio.run(crm.get_deal("northwind"))
+
+    asyncio.run(analyzer.analyze(deal))
+    asyncio.run(analyzer.analyze(deal))
+    assert len(calls) == 1
+
+    changed = deal.model_copy(update={"next_step": "Call the CFO"})
+    asyncio.run(analyzer.analyze(changed))
+    assert len(calls) == 2
 
 
 def test_clean_result_drops_made_up_evidence_and_contacts():
