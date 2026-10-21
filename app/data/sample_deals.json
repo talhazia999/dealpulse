@@ -1,0 +1,146 @@
+[
+  {
+    "id": "northwind",
+    "name": "Northwind Logistics — Annual Plan",
+    "company": "Northwind Logistics",
+    "amount": 48000,
+    "currency": "USD",
+    "stage": "Proposal sent",
+    "stage_entered_date": "2026-09-28",
+    "close_date": "2026-10-31",
+    "owner_name": "Sam Rivera",
+    "next_step": null,
+    "decision_maker": null,
+    "pain_points": null,
+    "as_of": "2026-10-19",
+    "contacts": [
+      {"id": "nw-priya", "name": "Priya Nair", "title": "Operations Manager", "email": "priya.nair@northwind.example", "is_decision_maker": false},
+      {"id": "nw-daniel", "name": "Daniel Cho", "title": "IT Lead", "email": "daniel.cho@northwind.example", "is_decision_maker": false}
+    ],
+    "activities": [
+      {
+        "id": "nw-a1", "type": "email", "date": "2026-09-18", "direction": "inbound",
+        "subject": "Route planning software",
+        "body": "Hi Sam, we're evaluating options to replace our routing spreadsheets. We have 12 dispatchers and planning eats most of their mornings. Could we set up a call next week?",
+        "contact_ids": ["nw-priya"]
+      },
+      {
+        "id": "nw-a2", "type": "call", "date": "2026-09-26", "duration_minutes": 32,
+        "subject": "Discovery call",
+        "body": "Priya and Daniel joined. Manual route planning costs the team about 15 hours a week across dispatchers. Anything above $40k needs CFO approval; Priya hasn't introduced us to the CFO yet. Daniel is worried about migrating data from their current tool.",
+        "contact_ids": ["nw-priya", "nw-daniel"]
+      },
+      {
+        "id": "nw-a3", "type": "note", "date": "2026-09-26",
+        "body": "They are also trialing RouteMax; the trial ends Nov 15. Priya said she prefers our interface.",
+        "contact_ids": []
+      },
+      {
+        "id": "nw-a4", "type": "email", "date": "2026-10-03", "direction": "outbound",
+        "subject": "Proposal and pricing",
+        "body": "Hi Priya, attached is the annual plan proposal we discussed: $48,000 for 12 dispatcher seats, including migration support. Happy to walk through it whenever suits you.",
+        "contact_ids": ["nw-priya"]
+      }
+    ]
+  },
+  {
+    "id": "brightline",
+    "name": "Brightline Dental Group — 14-Clinic Rollout",
+    "company": "Brightline Dental Group",
+    "amount": 86000,
+    "currency": "USD",
+    "stage": "Demo completed",
+    "stage_entered_date": "2026-10-12",
+    "close_date": "2026-11-28",
+    "owner_name": "Sam Rivera",
+    "next_step": "Security review call with Marcus on Oct 22",
+    "decision_maker": "Elena Ruiz (COO)",
+    "pain_points": "No-shows and inconsistent scheduling across 14 clinics",
+    "as_of": "2026-10-19",
+    "contacts": [
+      {"id": "bl-elena", "name": "Elena Ruiz", "title": "COO", "email": "elena.ruiz@brightline.example", "is_decision_maker": true},
+      {"id": "bl-marcus", "name": "Marcus Bell", "title": "IT Director", "email": "marcus.bell@brightline.example", "is_decision_maker": false}
+    ],
+    "activities": [
+      {
+        "id": "bl-a1", "type": "email", "date": "2026-10-01", "direction": "inbound",
+        "subject": "Scheduling across our clinics",
+        "body": "Hi Sam, we want to standardize scheduling across our 14 clinics. No-shows are costing us real revenue and every clinic does reminders differently. Can you show us the platform?",
+        "contact_ids": ["bl-elena"]
+      },
+      {
+        "id": "bl-a2", "type": "meeting", "date": "2026-10-12", "duration_minutes": 45,
+        "subject": "Product demo",
+        "body": "Elena and Marcus attended. Elena liked automated reminders and the multi-clinic dashboard. Marcus needs our SOC 2 report and a completed security questionnaire before procurement can start.",
+        "contact_ids": ["bl-elena", "bl-marcus"]
+      },
+      {
+        "id": "bl-a3", "type": "email", "date": "2026-10-13", "direction": "outbound",
+        "subject": "SOC 2 report and security questionnaire",
+        "body": "Hi Marcus, attached are our SOC 2 Type II report and the completed questionnaire. Would a security review call on Oct 22 work for you?",
+        "contact_ids": ["bl-marcus"]
+      },
+      {
+        "id": "bl-a4", "type": "email", "date": "2026-10-15", "direction": "inbound",
+        "subject": "Re: SOC 2 report and security questionnaire",
+        "body": "Thanks Sam. Oct 22 works. I'll bring someone from procurement. Budget for this is approved for Q4.",
+        "contact_ids": ["bl-marcus"]
+      },
+      {
+        "id": "bl-a5", "type": "note", "date": "2026-10-16",
+        "body": "Elena will present her vendor choice at the board meeting on Nov 20.",
+        "contact_ids": []
+      }
+    ]
+  },
+  {
+    "id": "kestrel",
+    "name": "Kestrel Manufacturing — Quality Analytics Pilot",
+    "company": "Kestrel Manufacturing",
+    "amount": 32000,
+    "currency": "USD",
+    "stage": "Negotiation",
+    "stage_entered_date": "2026-08-25",
+    "close_date": "2026-09-30",
+    "owner_name": "Jordan Lee",
+    "next_step": "Send revised contract to Tom",
+    "decision_maker": "Tom Becker (VP Operations)",
+    "pain_points": "Scrap rate tracking is manual",
+    "as_of": "2026-10-19",
+    "contacts": [
+      {"id": "ks-tom", "name": "Tom Becker", "title": "VP Operations", "email": "tom.becker@kestrel.example", "is_decision_maker": true},
+      {"id": "ks-aisha", "name": "Aisha Rahman", "title": "Quality Lead", "email": "aisha.rahman@kestrel.example", "is_decision_maker": false}
+    ],
+    "activities": [
+      {
+        "id": "ks-a1", "type": "call", "date": "2026-08-25", "duration_minutes": 40,
+        "subject": "Pricing negotiation",
+        "body": "Tom asked for a 10% discount on an annual commitment. He wants to start with a pilot at the Dayton plant, where scrap rate tracking is still done by hand.",
+        "contact_ids": ["ks-tom"]
+      },
+      {
+        "id": "ks-a2", "type": "email", "date": "2026-09-02", "direction": "outbound",
+        "subject": "Revised contract",
+        "body": "Hi Tom, attached is the revised contract with an 8% discount on the annual commitment and the Dayton pilot scope.",
+        "contact_ids": ["ks-tom"]
+      },
+      {
+        "id": "ks-a3", "type": "email", "date": "2026-09-03", "direction": "inbound",
+        "subject": "Automatic reply: Revised contract",
+        "body": "Tom Becker is no longer with Kestrel Manufacturing. For operations matters please contact Aisha Rahman.",
+        "contact_ids": ["ks-tom"]
+      },
+      {
+        "id": "ks-a4", "type": "email", "date": "2026-09-20", "direction": "inbound",
+        "subject": "Pilot status",
+        "body": "Hi Jordan, budget for new software is frozen until our new VP of Operations starts in November. We're still interested in the Dayton pilot, but I can't sign anything myself.",
+        "contact_ids": ["ks-aisha"]
+      },
+      {
+        "id": "ks-a5", "type": "note", "date": "2026-09-21",
+        "body": "Need to find out who the new VP of Operations is and when exactly they start.",
+        "contact_ids": []
+      }
+    ]
+  }
+]

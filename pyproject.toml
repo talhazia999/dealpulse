@@ -1,0 +1,9 @@
+[project]
+name = "dealpulse"
+version = "0.1.0"
+description = "AI deal assistant for B2B CRMs: summary, risk flags, next step and follow-up email for any deal."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["eval: runs the real AI analysis against the sample deals (calls the Claude API)"]

@@ -1,0 +1,20 @@
+{
+  "northwind": {
+    "must_flag": ["no_response", "decision_maker_missing", "competitor"],
+    "needs_high_risk": true,
+    "allow_high_risk": true,
+    "must_update": ["decision_maker"]
+  },
+  "brightline": {
+    "must_flag": [],
+    "needs_high_risk": false,
+    "allow_high_risk": false,
+    "must_update": []
+  },
+  "kestrel": {
+    "must_flag": ["close_date", "champion_change", "budget"],
+    "needs_high_risk": true,
+    "allow_high_risk": true,
+    "must_update": ["decision_maker"]
+  }
+}
