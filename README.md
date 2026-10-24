@@ -8,9 +8,20 @@
 - a ready-to-send **follow-up email**
 - **CRM field updates** that are written back only after the rep approves them
 
-This repository has three parts that share one Python backend:
+![DealPulse demo: a deal record next to its analysis, with risks linked to the email and call they came from](docs/demo.png)
 
-- **API** (`app/`): FastAPI, Claude, and CRM connectors.
+<details>
+<summary>Full analysis, after the rep approves the suggested updates</summary>
+
+![The full analysis: summary, risks, next step, follow-up email and approved CRM updates](docs/demo-full.png)
+
+</details>
+
+*Screenshots show the interface with sample output.*
+
+This repository has these parts, all sharing one Python backend:
+
+- **API** (`app/`): FastAPI, Claude, and CRM connectors for HubSpot and Pipedrive.
 - **Demo page** (`web/`): served by the API at `/`. Visitors try it on sample deals.
 - **HubSpot app** (`hubspot/`): a card on every HubSpot deal record. Each install is recorded as a lead.
 
